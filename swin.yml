@@ -1,0 +1,66 @@
+batch_size: 8
+iters: 200000
+
+model:
+  type: MLATransformer
+  backbone:
+    type: SwinTransformer_base_patch4_window7_224
+    ape: False
+    drop_path_rate: 0.3
+    patch_norm: True
+    pretrained: https://bj.bcebos.com/paddleseg/dygraph/swin_transformer_base_patch4_window7_224_imagenet_1k.tar.gz
+  num_classes: 4
+  in_channels: [128, 256, 512, 1024]
+  mlahead_channels: 128
+
+train_dataset:
+  type: Dataset
+  dataset_root: ./data
+  train_path: train_list.txt
+  num_classes: 4
+  edge: True
+  transforms:
+    - type: RandomHorizontalFlip
+    - type: RandomVerticalFlip
+    - type: RandomRotation
+      max_rotation: 180
+      im_padding_value: [127.5, 127.5, 127.5]
+      label_padding_value: 255
+    - type: RandomBlur
+    - type: RandomDistort
+      brightness_range: 0.4
+      contrast_range: 0.4
+      saturation_range: 0.4
+    - type: Resize
+      target_size: [224, 224]
+    - type: Normalize
+  mode: train
+
+val_dataset:
+  type: Dataset
+  dataset_root: ./data
+  val_path: val_list.txt
+  num_classes: 4
+  transforms:
+    - type: Resize
+      target_size: [224, 224]
+    - type: Normalize
+  mode: val
+
+optimizer:
+  type: sgd
+  momentum: 0.9
+  weight_decay: 4.0e-5
+
+learning_rate:
+  value: 0.003
+  decay:
+    type: poly
+    power: 0.9
+    end_lr: 0.00001
+
+loss:
+  types:
+    - type: CrossEntropyLoss
+    - type: CrossEntropyLoss
+  coef: [1, 0.4]
